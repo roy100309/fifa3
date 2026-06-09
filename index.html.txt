@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FC ONLINE 이적시장 수수료 최적화 계산기</title>
+    <style>
+        /* 넥슨 FC 온라인 공식 스타일 및 모바일 반응형 가이드 */
+        :root {
+            --bg-dark: #111116;
+            --panel-bg: #181920;
+            --border-color: #262833;
+            --accent-green: #00ff66;
+            --text-main: #ffffff;
+            --text-muted: #8e92a4;
+            --btn-active: #222531;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            padding: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .calc-wrapper {
+            width: 100%;
+            max-width: 480px;
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 24px 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-size: 20px;
+            font-weight: 700;
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 24px;
+            letter-spacing: -0.5px;
+            color: var(--text-main);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .label-title {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            display: block;
+            font-weight: 600;
+        }
+
+        /* 판매 금액 입력창 */
+        .price-input-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .price-input-box input {
+            width: 100%;
+            background-color: #0d0e12;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 14px 60px 14px 14px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 4px;
+            outline: none;
+            box-sizing: border-box;
+            -moz-appearance: textfield;
+        }
+
+        .price-input-box input::-webkit-outer-spin-button,
+        .price-input-box input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .price-input-box input:focus {
+            border-color: #44495e;
+        }
+
+        .price-input-box .unit-tag {
+            position: absolute;
+            right: 14px;
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .live-hint {
+            font-size: 12px;
+            color: var(--accent-green);
+            margin-top: 6px;
+            min-height: 18px;
+            font-weight: 500;
+        }
+
+        /* 혜택 설정 토글 버튼 */
+        .benefit-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-toggle {
+            flex: 1;
+            background-color: #0d0e12;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 14px 10px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-toggle.active {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+            background-color: rgba(0, 255, 102, 0.04);
+        }
+
+        /* 쿠폰 카운터 (+/- 버튼 조절) */
+        .coupon-counter {
+            display: flex;
+            background-color: #0d0e12;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .btn-count {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            width: 55px;
+            font-size: 20px;
+            cursor: pointer;
+            font-weight: 400;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-count:active {
+            background-color: var(--btn-active);
+        }
+
+        .coupon-value {
+            flex: 1;
+            text-align: center;
+            padding: 14px 0;
+            font-size: 14px;
+            font-weight: 600;
+            border-left: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            user-select: none;
+        }
+
+        /* 결과 데이터 패널 */
+        .result-panel {
+            background-color: #0d0e12;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 18px;
+            margin-top: 24px;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .result-row:last-of-type {
+            margin-bottom: 0;
+        }
+
+        .result-row.total {
+            border-top: 1px solid var(--border-color);
+            padding-top: 14px;
+            margin-top: 14px;
+            font-size: 15px;
+            color: var(--text-main);
+            font-weight: 700;
+            align-items: center;
+        }
+
+        .result-row.total .highlight {
+            color: var(--accent-green);
+            font-size: 18px;
+            font-weight: 800;
+        }
+    </style>
+</head>
+<body>
+
+<div class="calc-wrapper">
+    <h1>이적시장 수수료 계산기</h1>
+
+    <div class="input-group">
+        <span class="label-title">판매 금액 입력</span>
+        <div class="price-input-box">
+            <input type="number" id="price-input" placeholder="숫자만 입력 (예: 2.7)" step="0.1" min="0" oninput="calculate()">
+            <span class="unit-tag">조 BP</span>
+        </div>
+        <div class="live-hint" id="live-hint"></div>
+    </div>
+
+    <div class="input-group">
+        <span class="label-title">공통 혜택 설정</span>
+        <div class="benefit-buttons">
+            <button type="button" id="btn-pc" class="btn-toggle active" onclick="toggleBenefit('pc')">PC방 혜택 (30%)</button>
+            <button type="button" id="btn-top" class="btn-toggle active" onclick="toggleBenefit('top')">TOP CLASS (20%)</button>
+        </div>
+    </div>
+
+    <div class="input-group">
+        <span class="label-title">수수료 쿠폰 설정</span>
+        <div class="coupon-counter">
+            <button type="button" class="btn-count" onclick="adjustCoupon(-10)">-</button>
+            <div class="coupon-value" id="coupon-display">쿠폰 미적용 (0%)</div>
+            <button type="button" class="btn-count" onclick="adjustCoupon(10)">+</button>
+        </div>
+    </div>
+
+    <div class="result-panel">
+        <div class="result-row">
+            <span>총 할인율 감면</span>
+            <span id="res-discount">50%</span>
+        </div>
+        <div class="result-row">
+            <span>최종 발생 수수료율</span>
+            <span id="res-fee-rate">20%</span>
+        </div>
+        <div class="result-row total">
+            <span>최종 수령 금액</span>
+            <span class="highlight" id="res-receive">0 BP</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 상태 초기 설정 값 정의
+    let hasPc = true;
+    let hasTop = true;
+    let couponRate = 0;
+
+    // 공통 옵션 선택 제어 스크립트
+    function toggleBenefit(type) {
+        if (type === 'pc') {
+            hasPc = !hasPc;
+            document.getElementById('btn-pc').classList.toggle('active', hasPc);
+        } else if (type === 'top') {
+            hasTop = !hasTop;
+            document.getElementById('btn-top').classList.toggle('active', hasTop);
+        }
+        calculate();
+    }
+
+    // 쿠폰 수치 제한 연산 시스템
+    function adjustCoupon(amount) {
+        couponRate += amount;
+        if (couponRate < 0) couponRate = 0;
+        if (couponRate > 50) couponRate = 50; 
+
+        const display = document.getElementById('coupon-display');
+        if (couponRate === 0) {
+            display.innerText = "쿠폰 미적용 (0%)";
+        } else {
+            display.innerText = `${couponRate}% 할인 쿠폰`;
+        }
+        calculate();
+    }
+
+    // 한글 가독성 단위 포맷팅 모듈
+    function formatKorean(num) {
+        if (num === 0) return "0 BP";
+        let jo = Math.floor(num / 1000000000000);
+        let eok = Math.floor((num % 1000000000000) / 100000000);
+        
+        let result = [];
+        if (jo > 0) result.push(`${jo}조`);
+        if (eok > 0) result.push(`${eok}억`);
+        return result.join(' ') + " BP";
+    }
+
+    // 실시간 연산 핵심 비즈니스 로직
+    function calculate() {
+        const inputVal = parseFloat(document.getElementById('price-input').value);
+        const hint = document.getElementById('live-hint');
+        
+        if (isNaN(inputVal) || inputVal <= 0) {
+            hint.innerText = "";
+            document.getElementById('res-receive').innerText = "0 BP";
+            return;
+        }
+
+        // 1조 기준 수치 변환 처리
+        const realBP = Math.round(inputVal * 1000000000000);
+        hint.innerText = `인식된 금액: ${realBP.toLocaleString()} BP`;
+
+        // 할인율 산출
+        const totalDiscount = (hasPc ? 30 : 0) + (hasTop ? 20 : 0) + couponRate;
+        document.getElementById('res-discount').innerText = `${totalDiscount}%`;
+
+        // 수수료율 및 인게임 정수 반올림 동기화 반영
+        const actualFeeRate = 40 * (1 - (totalDiscount / 100));
+        document.getElementById('res-fee-rate').innerText = `${actualFeeRate.toFixed(1).replace('.0', '')}%`;
+
+        const receiveAmount = Math.round(realBP * (1 - (actualFeeRate / 100)));
+        document.getElementById('res-receive').innerText = `${receiveAmount.toLocaleString()} BP (${formatKorean(receiveAmount)})`;
+    }
+
+    // 문서 시작 시 즉각 기본 계산 대기 상태 활성화
+    calculate();
+</script>
+</body>
+</html>
